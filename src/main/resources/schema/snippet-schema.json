@@ -1,0 +1,30 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Snippet Schema",
+  "description": "Schema for validating snippet objects",
+  "type": "object",
+  "required": ["title", "$id", "description", "definitions", "$schema"],
+  "properties": {
+    "title": {
+      "type": "string",
+      "description": "Title of the snippet"
+    },
+    "$id": {
+      "type": "string",
+      "format": "uri",
+      "description": "Unique identifier for the snippet in URI format"
+    },
+    "description": {
+      "type": "string",
+      "description": "Description of the snippet"
+    },
+    "definitions": {
+      "type": "object",
+      "description": "Definitions used in the snippet"
+    },
+    "$schema": {
+      "type": "string",
+      "description": "The schema the snippet conforms to"
+    }
+  }
+}

@@ -1,0 +1,23 @@
+quarkus:
+  http:
+    port: 8090
+  log:
+    level: INFO
+  # Swagger UI configuration
+  swagger-ui:
+    always-include: true
+    path: /swagger-ui
+    theme: original
+  # OpenAPI configuration
+  smallrye-openapi:
+    path: /openapi
+    info-title: OpenEPCIS Snippet Service API
+    info-version: 1.0.0
+    info-description: API for managing atomic snippets in form of JSON schema
+    info-contact-name: OpenEPCIS community
+    info-contact-email: info@openepcis.io
+    info-contact-url: https://github.com/openepcis/snippet-service
+  # OpenSearch configuration
+  opensearch:
+    hosts: ${OPENSEARCH_HOST:localhost:9200}
+    protocol: ${OPENSEARCH_PROTOCOL:http}

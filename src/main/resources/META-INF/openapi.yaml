@@ -1,0 +1,16 @@
+openapi: 3.1.0
+info:
+  title: OpenEPCIS Snippet Service API
+  description: API for managing atomic snippets in form of JSON schema
+  version: 1.0.0
+  license:
+    name: Apache License 2.0
+  contact:
+    name: OpenEPCIS community
+    email: info@openepcis.io
+tags:
+  - name: snippets
+    description: Snippet operations
+
+paths: {}
+# The actual paths will be generated from the code annotations
