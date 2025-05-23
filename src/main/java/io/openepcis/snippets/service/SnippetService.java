@@ -85,6 +85,16 @@ public class SnippetService {
     }
 
     /**
+     * Delete a snippet by its ID
+     *
+     * @param id The ID of the snippet to delete
+     * @throws IOException If there is an error deleting the snippet
+     */
+    public void delete(String id) throws IOException {
+        snippetRepository.delete(id);
+    }
+
+    /**
      * Search for snippets based on the provided search text
      *
      * @param searchText The text to search for

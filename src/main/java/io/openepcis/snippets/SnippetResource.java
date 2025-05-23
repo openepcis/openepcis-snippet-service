@@ -5,10 +5,11 @@ import java.util.List;
 
 import jakarta.inject.Inject;
 import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.DELETE;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
-
+import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
@@ -77,11 +78,31 @@ public class SnippetResource {
         }
     }
 
+    @DELETE
+    @Path("/{id}")
+    @Operation(summary = "Delete a snippet", description = "Delete a snippet by its $id")
+    @APIResponses(value = {
+        @APIResponse(responseCode = "204", description = "Snippet deleted successfully"),
+        @APIResponse(responseCode = "404", description = "Snippet not found"),
+        @APIResponse(responseCode = "500", description = "Internal server error")
+    })
+    public Response deleteSnippet(@PathParam("id") String id) {
+        try {
+            snippetService.delete(id);
+            return Response.noContent().build();
+        } catch (IOException e) {
+            LOG.error("Error deleting snippet", e);
+            return Response.status(Status.INTERNAL_SERVER_ERROR)
+                    .entity("Error deleting snippet: " + e.getMessage())
+                    .build();
+        }
+    }
+
     @GET
     @Operation(summary = "Search for snippets", description = "Search for snippets based on the provided search text")
     @APIResponses(value = {
-            @APIResponse(responseCode = "200", description = "Successful operation", content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(type = SchemaType.ARRAY, implementation = Snippet.class))),
-            @APIResponse(responseCode = "500", description = "Internal server error")
+        @APIResponse(responseCode = "200", description = "Successful operation", content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(type = SchemaType.ARRAY, implementation = Snippet.class))),
+        @APIResponse(responseCode = "500", description = "Internal server error")
     })
     public Response getSnippets(
             @Parameter(description = "Text to search for in snippets") @QueryParam("searchText") String searchText) {
