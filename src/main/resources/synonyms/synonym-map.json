@@ -1,0 +1,11 @@
+{
+  "uri": ["url", "uniform resource identifier", "resource identifier", "link", "address"],
+  "url": ["uri", "uniform resource locator", "web address", "link", "hyperlink", "address"],
+  "pharma": ["pharmaceutical", "drug", "medicine", "medication", "pharmacy", "therapeutics"],
+  "pharmaceutical": ["pharma", "drug", "medicine", "medication", "pharmacy", "therapeutics"],
+  "healthcare": ["health", "medical", "clinical", "patient care", "health services"],
+  "retail": ["store", "shop", "commerce", "sales", "merchant", "seller"],
+  "logistics": ["supply chain", "transportation", "shipping", "delivery", "distribution", "warehousing"],
+  "manufacturing": ["production", "factory", "assembly", "industrial", "fabrication"],
+  "food": ["grocery", "produce", "edible", "nutrition", "consumable", "perishable"]
+}

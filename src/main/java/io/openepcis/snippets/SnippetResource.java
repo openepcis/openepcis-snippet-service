@@ -1,23 +1,15 @@
 package io.openepcis.snippets;
 
-import java.io.IOException;
-import java.util.List;
-
+import com.fasterxml.jackson.databind.ObjectMapper;
+import io.openepcis.snippets.constants.Constants;
+import io.openepcis.snippets.model.Snippet;
+import io.openepcis.snippets.service.SnippetService;
 import jakarta.inject.Inject;
-import jakarta.ws.rs.Consumes;
-import jakarta.ws.rs.DELETE;
-import jakarta.ws.rs.GET;
-import jakarta.ws.rs.POST;
-import jakarta.ws.rs.Path;
-import jakarta.ws.rs.PathParam;
-import jakarta.ws.rs.Produces;
-import jakarta.ws.rs.QueryParam;
+import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
-
-import io.openepcis.snippets.model.Snippet;
-import io.openepcis.snippets.service.SnippetService;
+import lombok.extern.slf4j.Slf4j;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
@@ -26,18 +18,16 @@ import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponses;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
-import org.jboss.logging.Logger;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import java.io.IOException;
+import java.util.List;
 
 @Path("/snippet")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
 @Tag(name = "snippets", description = "Snippet operations")
+@Slf4j
 public class SnippetResource {
-
-    private static final Logger LOG = Logger.getLogger(SnippetResource.class);
-    private static final int DEFAULT_LIMIT = 10;
 
     @Inject
     SnippetService snippetService;
@@ -61,17 +51,17 @@ public class SnippetResource {
             return Response.status(Status.CREATED).entity(snippet.withoutSource()).build();
         } catch (IllegalArgumentException e) {
             // Handle validation errors
-            LOG.debug("Validation error creating snippet: " + e.getMessage());
+            log.debug("Validation error creating snippet: {}", e.getMessage());
             return Response.status(Status.BAD_REQUEST)
                     .entity(e.getMessage())
                     .build();
         } catch (IOException e) {
-            LOG.error("Error creating snippet", e);
+            log.error("Error creating snippet", e);
             return Response.status(Status.INTERNAL_SERVER_ERROR)
                     .entity("Error creating snippet: " + e.getMessage())
                     .build();
         } catch (Exception e) {
-            LOG.error("Unexpected error creating snippet", e);
+            log.error("Unexpected error creating snippet", e);
             return Response.status(Status.INTERNAL_SERVER_ERROR)
                     .entity("Unexpected error creating snippet")
                     .build();
@@ -82,16 +72,16 @@ public class SnippetResource {
     @Path("/{id}")
     @Operation(summary = "Delete a snippet", description = "Delete a snippet by its $id")
     @APIResponses(value = {
-        @APIResponse(responseCode = "204", description = "Snippet deleted successfully"),
-        @APIResponse(responseCode = "404", description = "Snippet not found"),
-        @APIResponse(responseCode = "500", description = "Internal server error")
+            @APIResponse(responseCode = "204", description = "Snippet deleted successfully"),
+            @APIResponse(responseCode = "404", description = "Snippet not found"),
+            @APIResponse(responseCode = "500", description = "Internal server error")
     })
     public Response deleteSnippet(@PathParam("id") String id) {
         try {
             snippetService.delete(id);
             return Response.noContent().build();
         } catch (IOException e) {
-            LOG.error("Error deleting snippet", e);
+            log.error("Error deleting snippet", e);
             return Response.status(Status.INTERNAL_SERVER_ERROR)
                     .entity("Error deleting snippet: " + e.getMessage())
                     .build();
@@ -101,17 +91,17 @@ public class SnippetResource {
     @GET
     @Operation(summary = "Search for snippets", description = "Search for snippets based on the provided search text")
     @APIResponses(value = {
-        @APIResponse(responseCode = "200", description = "Successful operation", content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(type = SchemaType.ARRAY, implementation = Snippet.class))),
-        @APIResponse(responseCode = "500", description = "Internal server error")
+            @APIResponse(responseCode = "200", description = "Successful operation", content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(type = SchemaType.ARRAY, implementation = Snippet.class))),
+            @APIResponse(responseCode = "500", description = "Internal server error")
     })
     public Response getSnippets(
             @Parameter(description = "Text to search for in snippets") @QueryParam("searchText") String searchText) {
         try {
             // Use the service to search for snippets
-            List<Snippet> snippets = snippetService.searchSnippets(searchText, DEFAULT_LIMIT);
+            List<Snippet> snippets = snippetService.searchSnippets(searchText, Constants.DEFAULT_LIMIT);
             return Response.ok(snippets).build();
         } catch (IOException e) {
-            LOG.error("Error retrieving snippets", e);
+            log.error("Error retrieving snippets", e);
             return Response.status(Status.INTERNAL_SERVER_ERROR)
                     .entity("Error retrieving snippets: " + e.getMessage())
                     .build();

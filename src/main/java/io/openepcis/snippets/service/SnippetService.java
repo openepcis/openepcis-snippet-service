@@ -8,7 +8,7 @@ import io.openepcis.snippets.repository.SnippetRepository;
 import io.openepcis.snippets.util.JsonSchemaValidator;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
-import org.jboss.logging.Logger;
+import lombok.extern.slf4j.Slf4j;
 
 import java.io.IOException;
 import java.util.List;
@@ -18,9 +18,8 @@ import java.util.List;
  * Handles business logic between the resource and repository layers
  */
 @ApplicationScoped
+@Slf4j
 public class SnippetService {
-
-    private static final Logger LOG = Logger.getLogger(SnippetService.class);
 
     @Inject
     SnippetRepository snippetRepository;
@@ -68,7 +67,7 @@ public class SnippetService {
             }
         }
 
-        // Convert to Snippet object
+        // Convert to a Snippet object
         Snippet snippet;
         try {
             snippet = objectMapper.convertValue(jsonNode, Snippet.class);
@@ -78,8 +77,8 @@ public class SnippetService {
 
         // Save the snippet
         snippetRepository.save(snippet, requestBody);
-        
-        LOG.info("Created new snippet with $id: " + (jsonNode.has("$id") ? jsonNode.get("$id").asText() : "<no id>"));
+
+        log.info("Created new snippet with $id: {}", jsonNode.has("$id") ? jsonNode.get("$id").asText() : "<no id>");
         
         return snippet;
     }
