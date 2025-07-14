@@ -24,7 +24,11 @@ public class Snippet {
     
     @JsonDeserialize(converter = DefinitionsConverter.class)
     private Object definitions;
-    
+
+    @JsonProperty("$defs")
+    @JsonDeserialize(converter = DefinitionsConverter.class)
+    private Object defs;
+
     private Instant createdAt;
     
     // Used to store the entire JSON document
@@ -73,7 +77,15 @@ public class Snippet {
     public void setDefinitions(Object definitions) {
         this.definitions = definitions;
     }
-    
+
+    public Object getDefs() {
+        return defs;
+    }
+
+    public void setDefs(Object defs) {
+        this.defs = defs;
+    }
+
     public Instant getCreatedAt() {
         return createdAt;
     }
@@ -104,6 +116,7 @@ public class Snippet {
         copy.setDescription(this.description);
         copy.setTitle(this.title);
         copy.setDefinitions(this.definitions);
+        copy.setDefs(this.defs);
         copy.setCreatedAt(this.createdAt);
 
         return copy;

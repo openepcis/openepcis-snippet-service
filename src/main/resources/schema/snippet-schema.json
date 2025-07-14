@@ -3,7 +3,21 @@
   "title": "Snippet Schema",
   "description": "Schema for validating snippet objects",
   "type": "object",
-  "required": ["title", "$id", "description", "definitions", "$schema"],
+  "required": ["title", "$id", "description", "$schema"],
+  "oneOf": [
+    {
+      "required": ["definitions"],
+      "not": {
+        "required": ["$defs"]
+      }
+    },
+    {
+      "required": ["$defs"],
+      "not": {
+        "required": ["definitions"]
+      }
+    }
+  ],
   "properties": {
     "title": {
       "type": "string",
@@ -21,6 +35,10 @@
     "definitions": {
       "type": "object",
       "description": "Definitions used in the snippet"
+    },
+    "$defs": {
+      "$ref": "#/properties/definitions",
+      "description": "Definitions used in the snippet (alternative to definitions)"
     },
     "$schema": {
       "type": "string",
