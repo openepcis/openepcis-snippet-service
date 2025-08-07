@@ -6,7 +6,11 @@ package io.openepcis.snippets.constants;
  */
 public final class Constants {
 
+    public static final String TEMPLATE_OPENEPCIS_SNIPPET_INDEX_TEMPLATE = "template/openepcis-snippet-index-template.json";
     public static final String INDEX_NAME = "snippets";
+    public static final String TEMPLATE = "template";
+    public static final String SETTINGS = "settings";
+    public static final String MAPPINGS = "mappings";
     public static final int DEFAULT_LIMIT = 10;
 
     // Query related constants

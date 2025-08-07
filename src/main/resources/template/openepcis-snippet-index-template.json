@@ -1,0 +1,41 @@
+{
+  "index_patterns": ["snippets"],
+  "template": {
+    "settings": {
+      "number_of_shards": 1,
+      "number_of_replicas": 0,
+      "analysis": {
+        "analyzer": {
+          "standard_stop": {
+            "type": "custom",
+            "tokenizer": "standard",
+            "filter": ["lowercase", "stop"]
+          }
+        }
+      }
+    },
+    "mappings": {
+      "properties": {
+        "$id": {
+          "type": "keyword"
+        },
+        "title": {
+          "type": "text",
+          "boost": 2.0,
+          "analyzer": "standard_stop"
+        },
+        "description": {
+          "type": "text",
+          "analyzer": "standard_stop"
+        },
+        "source": {
+          "type": "keyword",
+          "index": false
+        },
+        "createdAt": {
+          "type": "date"
+        }
+      }
+    }
+  }
+}

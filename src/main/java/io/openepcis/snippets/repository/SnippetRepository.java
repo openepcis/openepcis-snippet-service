@@ -6,18 +6,30 @@ import io.openepcis.snippets.service.QueryBuilderService;
 import jakarta.annotation.PostConstruct;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
+import jakarta.json.Json;
+import jakarta.json.JsonObject;
+import jakarta.json.JsonReader;
+import jakarta.json.stream.JsonParser;
 import lombok.extern.slf4j.Slf4j;
+import org.opensearch.client.json.JsonpMapper;
 import org.opensearch.client.opensearch.OpenSearchClient;
 import org.opensearch.client.opensearch._types.SortOrder;
-import org.opensearch.client.opensearch._types.mapping.Property;
+import org.opensearch.client.opensearch._types.mapping.TypeMapping;
 import org.opensearch.client.opensearch._types.query_dsl.Query;
 import org.opensearch.client.opensearch.core.*;
 import org.opensearch.client.opensearch.core.search.Hit;
 import org.opensearch.client.opensearch.indices.CreateIndexRequest;
 import org.opensearch.client.opensearch.indices.ExistsRequest;
+import org.opensearch.client.opensearch.indices.IndexSettings;
 
 import java.io.IOException;
-import java.util.*;
+import java.io.StringReader;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Objects;
+
+import static io.openepcis.snippets.constants.Constants.*;
 
 /**
  * Repository for Snippet entities.
@@ -60,35 +72,53 @@ public class SnippetRepository {
     }
 
     /**
-     * Create the snippet index with appropriate mappings.
+     * Create the snippet index with appropriate settings and mappings from the template file.
      *
      * @throws IOException if there is an error creating the index
      */
     private void createSnippetsIndex() throws IOException {
-        // Create mapping properties for the index
-        Map<String, Property> properties = Map.of(
-                Constants.ID, Property.of(p -> p.keyword(k -> k)),
-                Constants.TITLE, Property.of(p -> p.text(t -> t.boost(2.0).analyzer("standard_stop"))),
-                Constants.DESCRIPTION, Property.of(p -> p.text(t -> t.analyzer("standard_stop"))),
-                Constants.SOURCE, Property.of(p -> p.keyword(k -> k.index(false))),
-                Constants.CREATED_AT, Property.of(p -> p.date(d -> d))
+        // Get the JsonpMapper from the client
+        final JsonpMapper mapper = client._transport().jsonpMapper();
+
+        // Read the template file from resources
+        final String templateContent = new String(
+                Objects.requireNonNull(
+                        getClass().getClassLoader().getResourceAsStream(TEMPLATE_OPENEPCIS_SNIPPET_INDEX_TEMPLATE)
+                ).readAllBytes()
         );
 
-        // Create the index with settings and mappings
-        CreateIndexRequest request = new CreateIndexRequest.Builder()
-                .index(Constants.INDEX_NAME)
-                .settings(s -> s
-                        .numberOfShards("1")
-                        .numberOfReplicas("0")
-                        .analysis(a -> a
-                                .analyzer("standard_stop", sa -> sa
-                                        .custom(c -> c
-                                                .tokenizer("standard")
-                                                .filter("lowercase", "stop")))))
-                .mappings(m -> m.properties(properties))
-                .build();
+        // Parse the template JSON to extract both settings and mappings
+        try (JsonReader jsonReader = Json.createReader(new StringReader(templateContent))) {
 
-        client.indices().create(request);
+            final JsonObject templateObject = jsonReader.readObject().getJsonObject(TEMPLATE);
+
+            // Extract settings JSON
+            final JsonObject settingsJson = templateObject.getJsonObject(SETTINGS);
+
+            // Extract mappings JSON
+            final JsonObject mappingsJson = templateObject.getJsonObject(MAPPINGS);
+
+            // Create a JsonParser to parse the mappings
+            final JsonParser mappingsParser = mapper.jsonProvider()
+                    .createParser(new StringReader(mappingsJson.toString()));
+
+            // Create a JsonParser to parse the mappings
+            final JsonParser settingParser = mapper.jsonProvider()
+                    .createParser(new StringReader(settingsJson.toString()));
+
+            // Deserialize the mappings into a TypeMapping object
+            final TypeMapping mappings = TypeMapping._DESERIALIZER.deserialize(mappingsParser, mapper);
+
+            final IndexSettings settings = IndexSettings._DESERIALIZER.deserialize(settingParser, mapper);
+
+            // Create the index with both settings and mappings
+            final CreateIndexRequest request = new CreateIndexRequest.Builder()
+                    .index(Constants.INDEX_NAME)
+                    .mappings(mappings)
+                    .settings(settings).build();
+
+            client.indices().create(request);
+        }
     }
 
     /**
