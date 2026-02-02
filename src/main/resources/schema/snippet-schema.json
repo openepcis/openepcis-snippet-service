@@ -1,48 +1,48 @@
 {
-  "$schema": "http://json-schema.org/draft-07/schema#",
-  "title": "Snippet Schema",
-  "description": "Schema for validating snippet objects",
-  "type": "object",
-  "required": ["title", "$id", "description", "$schema"],
-  "oneOf": [
-    {
-      "required": ["definitions"],
-      "not": {
-        "required": ["$defs"]
-      }
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "title": "Snippet Schema",
+    "description": "Schema for validating snippet objects",
+    "type": "object",
+    "required": [
+	"title",
+	"$id",
+	"description",
+	"$schema"
+    ],
+    "properties": {
+	"title": {
+	    "type": "string",
+	    "description": "Title of the snippet"
+	},
+	"$id": {
+	    "type": "string",
+	    "format": "uri",
+	    "description": "Unique identifier for the snippet in URI format"
+	},
+	"description": {
+	    "type": "string",
+	    "description": "Description of the snippet"
+	},
+	"$schema": {
+	    "type": "string",
+	    "description": "The schema the snippet conforms to"
+	},
+	"definitions": {
+	    "type": "object",
+	    "description": "Definitions used in the snippet (legacy)"
+	},
+	"$defs": {
+	    "type": "object",
+	    "description": "Definitions used in the snippet (standard)"
+	},
+	"type": {
+	    "type": "string",
+	    "description": "The type of the schema"
+	},
+	"properties": {
+	    "type": "object",
+	    "description": "Properties defined in the schema"
+	}
     },
-    {
-      "required": ["$defs"],
-      "not": {
-        "required": ["definitions"]
-      }
-    }
-  ],
-  "properties": {
-    "title": {
-      "type": "string",
-      "description": "Title of the snippet"
-    },
-    "$id": {
-      "type": "string",
-      "format": "uri",
-      "description": "Unique identifier for the snippet in URI format"
-    },
-    "description": {
-      "type": "string",
-      "description": "Description of the snippet"
-    },
-    "definitions": {
-      "type": "object",
-      "description": "Definitions used in the snippet"
-    },
-    "$defs": {
-      "$ref": "#/properties/definitions",
-      "description": "Definitions used in the snippet (alternative to definitions)"
-    },
-    "$schema": {
-      "type": "string",
-      "description": "The schema the snippet conforms to"
-    }
-  }
+    "additionalProperties": true
 }
