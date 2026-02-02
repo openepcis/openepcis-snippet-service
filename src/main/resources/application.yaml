@@ -1,6 +1,6 @@
 quarkus:
   http:
-    port: 8090
+    port: ${QUARKUS_HTTP_PORT:8080}
     cors:
       ~: true
       origins: '*'
@@ -27,5 +27,5 @@ quarkus:
     info-contact-url: https://github.com/openepcis/snippet-service
   # OpenSearch configuration
   opensearch:
-    hosts: ${OPENSEARCH_HOST:localhost:9200}
-    protocol: ${OPENSEARCH_PROTOCOL:http}
+    hosts: ${QUARKUS_OPENSEARCH_HOSTS:localhost:9200}
+    protocol: ${QUARKUS_OPENSEARCH_PROTOCOL:http}

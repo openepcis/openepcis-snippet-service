@@ -1,0 +1,145 @@
+name: Build and Release with Quarkus JIB
+
+on:
+  push:
+    branches:
+      - main
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: openepcis-snippet-service
+  IMAGE_GROUP: openepcis
+
+jobs:
+  build-and-test:
+    name: Build and Test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+          cache: maven
+
+      - name: Build and Test
+        run: |
+          ./mvnw \
+            --no-transfer-progress \
+            --batch-mode \
+            clean verify
+
+  build-and-push-images:
+    name: Build and Push Container Images
+    needs: [build-and-test]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+          cache: maven
+
+      - name: Extract version from tag
+        id: version
+        run: |
+          if [[ "${{ github.ref }}" == refs/tags/v* ]]; then
+            VERSION="${{ github.ref_name }}"
+            VERSION="${VERSION#v}"
+            echo "VERSION=${VERSION}" >> $GITHUB_OUTPUT
+            echo "IS_RELEASE=true" >> $GITHUB_OUTPUT
+          else
+            echo "VERSION=latest" >> $GITHUB_OUTPUT
+            echo "IS_RELEASE=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and Push linux/amd64 Image
+        run: |
+          ./mvnw --no-transfer-progress --batch-mode \
+            package -DskipTests \
+            -Dquarkus.container-image.build=true \
+            -Dquarkus.container-image.push=true \
+            -Dquarkus.container-image.registry=${{ env.REGISTRY }} \
+            -Dquarkus.container-image.group=${{ env.IMAGE_GROUP }} \
+            -Dquarkus.container-image.name=${{ env.IMAGE_NAME }} \
+            -Dquarkus.container-image.tag=${{ steps.version.outputs.VERSION }}-amd64 \
+            -Dquarkus.jib.base-jvm-image=eclipse-temurin:21-jre-alpine \
+            -Dquarkus.jib.platforms=linux/amd64
+
+      - name: Build and Push linux/arm64 Image
+        run: |
+          ./mvnw --no-transfer-progress --batch-mode \
+            package -DskipTests \
+            -Dquarkus.container-image.build=true \
+            -Dquarkus.container-image.push=true \
+            -Dquarkus.container-image.registry=${{ env.REGISTRY }} \
+            -Dquarkus.container-image.group=${{ env.IMAGE_GROUP }} \
+            -Dquarkus.container-image.name=${{ env.IMAGE_NAME }} \
+            -Dquarkus.container-image.tag=${{ steps.version.outputs.VERSION }}-arm64 \
+            -Dquarkus.jib.base-jvm-image=eclipse-temurin:21-jre-alpine \
+            -Dquarkus.jib.platforms=linux/arm64
+
+      - name: Create and Push Multi-Arch Manifest
+        run: |
+          IMAGE_BASE="${{ env.REGISTRY }}/${{ env.IMAGE_GROUP }}/${{ env.IMAGE_NAME }}"
+          VERSION="${{ steps.version.outputs.VERSION }}"
+
+          # Create and push versioned manifest
+          docker manifest create ${IMAGE_BASE}:${VERSION} \
+            --amend ${IMAGE_BASE}:${VERSION}-amd64 \
+            --amend ${IMAGE_BASE}:${VERSION}-arm64
+          docker manifest push ${IMAGE_BASE}:${VERSION}
+
+          echo "Pushed multi-arch manifest: ${IMAGE_BASE}:${VERSION}"
+
+      - name: Create and Push Latest Manifest
+        if: steps.version.outputs.IS_RELEASE == 'true' || github.ref == 'refs/heads/main'
+        run: |
+          IMAGE_BASE="${{ env.REGISTRY }}/${{ env.IMAGE_GROUP }}/${{ env.IMAGE_NAME }}"
+          VERSION="${{ steps.version.outputs.VERSION }}"
+
+          # Tag as latest
+          docker manifest create ${IMAGE_BASE}:latest \
+            --amend ${IMAGE_BASE}:${VERSION}-amd64 \
+            --amend ${IMAGE_BASE}:${VERSION}-arm64
+          docker manifest push ${IMAGE_BASE}:latest
+
+          echo "Pushed multi-arch manifest: ${IMAGE_BASE}:latest"
+
+      - name: Summary
+        run: |
+          IMAGE_BASE="${{ env.REGISTRY }}/${{ env.IMAGE_GROUP }}/${{ env.IMAGE_NAME }}"
+          VERSION="${{ steps.version.outputs.VERSION }}"
+
+          echo "## Container Images Published" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Tag | Platform |" >> $GITHUB_STEP_SUMMARY
+          echo "|-----|----------|" >> $GITHUB_STEP_SUMMARY
+          echo "| \`${IMAGE_BASE}:${VERSION}\` | Multi-arch (amd64, arm64) |" >> $GITHUB_STEP_SUMMARY
+          echo "| \`${IMAGE_BASE}:${VERSION}-amd64\` | linux/amd64 |" >> $GITHUB_STEP_SUMMARY
+          echo "| \`${IMAGE_BASE}:${VERSION}-arm64\` | linux/arm64 |" >> $GITHUB_STEP_SUMMARY
+
+          if [[ "${{ steps.version.outputs.IS_RELEASE }}" == "true" ]] || [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
+            echo "| \`${IMAGE_BASE}:latest\` | Multi-arch (amd64, arm64) |" >> $GITHUB_STEP_SUMMARY
+          fi

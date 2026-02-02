@@ -41,8 +41,8 @@ curl http://localhost:9200
 mvn compile quarkus:dev
 
 # 4. Access the application
-# Swagger UI: http://localhost:8090/swagger-ui
-# API Endpoint: http://localhost:8090/snippet
+# Swagger UI: http://localhost:8080/swagger-ui
+# API Endpoint: http://localhost:8080/snippet
 ```
 
 ## OpenSearch Setup
@@ -104,13 +104,13 @@ docker logs opensearch
 mvn compile quarkus:dev
 ```
 
-The application will start on `http://localhost:8090`. Any code changes will be automatically reloaded.
+The application will start on `http://localhost:8080`. Any code changes will be automatically reloaded.
 
 **Available URLs in Dev Mode:**
-- Application: http://localhost:8090
-- Swagger UI: http://localhost:8090/swagger-ui
-- OpenAPI Spec: http://localhost:8090/openapi
-- Quarkus Dev UI: http://localhost:8090/q/dev-ui
+- Application: http://localhost:8080
+- Swagger UI: http://localhost:8080/swagger-ui
+- OpenAPI Spec: http://localhost:8080/openapi
+- Quarkus Dev UI: http://localhost:8080/q/dev-ui
 
 ### What Happens on Startup
 
@@ -132,7 +132,7 @@ INFO  [io.ope.sni.rep.SnippetRepository] OpenSearch index already exists: snippe
 ### Step 1: Check the Application is Running
 
 ```bash
-curl http://localhost:8090/snippet
+curl http://localhost:8080/snippet
 ```
 
 Expected response (empty array initially):
@@ -143,7 +143,7 @@ Expected response (empty array initially):
 ### Step 2: Add a Test Snippet
 
 ```bash
-curl -X POST http://localhost:8090/snippet \
+curl -X POST http://localhost:8080/snippet \
   -H "Content-Type: application/json" \
   -d '{
     "$schema": "https://json-schema.org/draft/2020-12/schema",
@@ -161,7 +161,7 @@ curl -X POST http://localhost:8090/snippet \
 ### Step 3: Search for the Snippet
 
 ```bash
-curl "http://localhost:8090/snippet?searchText=test"
+curl "http://localhost:8080/snippet?searchText=test"
 ```
 
 You should see the snippet you just created in the response.
@@ -182,7 +182,7 @@ Saves a JSON schema snippet to OpenSearch.
 
 **Request:**
 ```bash
-curl -X POST http://localhost:8090/snippet \
+curl -X POST http://localhost:8080/snippet \
   -H "Content-Type: application/json" \
   -d '{
     "$id": "https://openepcis.github.io/example/snippet.json",
@@ -217,13 +217,13 @@ Retrieves snippets matching the search criteria.
 **Examples:**
 ```bash
 # Get all snippets (returns latest 10)
-curl http://localhost:8090/snippet
+curl http://localhost:8080/snippet
 
 # Search for snippets containing "CPI"
-curl "http://localhost:8090/snippet?searchText=CPI"
+curl "http://localhost:8080/snippet?searchText=CPI"
 
 # Search with multiple words
-curl "http://localhost:8090/snippet?searchText=epc%20uri"
+curl "http://localhost:8080/snippet?searchText=epc%20uri"
 ```
 
 **Search Features:**
@@ -238,7 +238,7 @@ Deletes a snippet by its `$id`.
 
 **Request:**
 ```bash
-curl -X DELETE "http://localhost:8090/snippet/https://example.com/test-snippet"
+curl -X DELETE "http://localhost:8080/snippet/https://example.com/test-snippet"
 ```
 
 **Response:** `204 No Content`
@@ -252,7 +252,7 @@ Configuration is in `src/main/resources/application.yaml`:
 ```yaml
 quarkus:
   http:
-    port: 8090
+    port: 8080
   opensearch:
     hosts: ${OPENSEARCH_HOST:localhost:9200}
     protocol: ${OPENSEARCH_PROTOCOL:http}
@@ -351,19 +351,19 @@ docker run -d --name opensearch \
 **Solutions:**
 1. Verify snippets were created successfully (POST should return 201)
 2. Wait a moment for OpenSearch to index the document
-3. Try searching without any search text: `curl http://localhost:8090/snippet`
+3. Try searching without any search text: `curl http://localhost:8080/snippet`
 
 ### Port Already in Use
 
 **Error:**
 ```
-Port 8090 is already in use
+Port 8080 is already in use
 ```
 
 **Solutions:**
 1. Find and kill the process using the port:
    ```bash
-   lsof -i :8090
+   lsof -i :8080
    kill -9 <PID>
    ```
 2. Or use a different port:
