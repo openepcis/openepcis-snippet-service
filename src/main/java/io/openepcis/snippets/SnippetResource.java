@@ -4,6 +4,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import io.openepcis.snippets.constants.Constants;
 import io.openepcis.snippets.model.Snippet;
 import io.openepcis.snippets.service.SnippetService;
+import io.quarkus.security.Authenticated;
+import jakarta.annotation.security.PermitAll;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
@@ -12,11 +14,14 @@ import jakarta.ws.rs.core.Response.Status;
 import lombok.extern.slf4j.Slf4j;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
+import org.eclipse.microprofile.openapi.annotations.enums.SecuritySchemeType;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponses;
+import org.eclipse.microprofile.openapi.annotations.security.SecurityRequirement;
+import org.eclipse.microprofile.openapi.annotations.security.SecurityScheme;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 
 import java.io.IOException;
@@ -26,6 +31,7 @@ import java.util.List;
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
 @Tag(name = "snippets", description = "Snippet operations")
+@SecurityScheme(securitySchemeName = "bearer-auth", type = SecuritySchemeType.HTTP, scheme = "bearer", bearerFormat = "JWT")
 @Slf4j
 public class SnippetResource {
 
@@ -36,6 +42,8 @@ public class SnippetResource {
     ObjectMapper objectMapper;
 
     @POST
+    @Authenticated
+    @SecurityRequirement(name = "bearer-auth")
     @Operation(summary = "Create a new snippet", description = "Creates a new code snippet from the provided JSON")
     @APIResponses(value = {
             @APIResponse(responseCode = "201", description = "Snippet created successfully", content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = Snippet.class))),
@@ -70,6 +78,8 @@ public class SnippetResource {
 
     @DELETE
     @Path("/{id}")
+    @Authenticated
+    @SecurityRequirement(name = "bearer-auth")
     @Operation(summary = "Delete a snippet", description = "Delete a snippet by its $id")
     @APIResponses(value = {
             @APIResponse(responseCode = "204", description = "Snippet deleted successfully"),
@@ -89,6 +99,7 @@ public class SnippetResource {
     }
 
     @GET
+    @PermitAll
     @Operation(summary = "Search for snippets", description = "Search for snippets based on the provided search text")
     @APIResponses(value = {
             @APIResponse(responseCode = "200", description = "Successful operation", content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(type = SchemaType.ARRAY, implementation = Snippet.class))),

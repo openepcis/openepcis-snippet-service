@@ -4,6 +4,7 @@ import io.openepcis.snippets.model.Snippet;
 import io.openepcis.snippets.service.SnippetService;
 import io.quarkus.test.InjectMock;
 import io.quarkus.test.junit.QuarkusTest;
+import io.quarkus.test.security.TestSecurity;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.core.Response;
 import org.junit.jupiter.api.Test;
@@ -110,6 +111,7 @@ public class SnippetResourceTest {
     }
 
     @Test
+    @TestSecurity(user = "testUser")
     public void testCreateSnippet() throws IOException {
         // Setup mock data
         String requestBody = "{\"title\":\"Test Snippet\",\"description\":\"This is a test snippet\"}";
@@ -141,6 +143,7 @@ public class SnippetResourceTest {
     }
 
     @Test
+    @TestSecurity(user = "testUser")
     public void testCreateSnippetValidationError() throws IOException {
         // Setup mock service to throw IllegalArgumentException for validation error
         String invalidRequestBody = "{\"invalid\":\"json\"}";
@@ -161,6 +164,7 @@ public class SnippetResourceTest {
     }
 
     @Test
+    @TestSecurity(user = "testUser")
     public void testCreateSnippetHandlesIOException() throws IOException {
         // Setup mock service to throw IOException
         String requestBody = "{\"title\":\"Test Snippet\",\"description\":\"This is a test snippet\"}";
@@ -179,6 +183,7 @@ public class SnippetResourceTest {
     }
 
     @Test
+    @TestSecurity(user = "testUser")
     public void testDeleteSnippet() throws IOException {
         // Setup mock service (doNothing is the default behavior for void methods)
         doNothing().when(snippetService).delete(anyString());
@@ -196,6 +201,7 @@ public class SnippetResourceTest {
     }
 
     @Test
+    @TestSecurity(user = "testUser")
     public void testDeleteSnippetHandlesIOException() throws IOException {
         // Setup mock service to throw IOException
         doThrow(new IOException("Snippet not found")).when(snippetService).delete(anyString());

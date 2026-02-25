@@ -3,29 +3,51 @@ quarkus:
     port: ${QUARKUS_HTTP_PORT:8080}
     cors:
       ~: true
-      origins: '*'
+      origins: ${QUARKUS_CORS_ORIGINS:*}
       methods: GET,POST,PUT,DELETE,OPTIONS,PATCH,HEAD
-      headers: '*'
+      headers: Authorization,Content-Type,Accept,Origin,X-Requested-With
       exposed-headers: '*'
       access-control-max-age: 86400S
       access-control-allow-credentials: true
+    auth:
+      permission:
+        health:
+          paths: /q/*
+          policy: permit
+        openapi:
+          paths: /openapi,/swagger-ui,/swagger-ui/*
+          policy: permit
+        public-read:
+          paths: /snippet
+          methods: GET
+          policy: permit
+        protected-write:
+          paths: /snippet,/snippet/*
+          methods: POST,DELETE
+          policy: authenticated
   log:
     level: INFO
-  # Swagger UI configuration
   swagger-ui:
     always-include: true
     path: /swagger-ui
     theme: original
-  # OpenAPI configuration
   smallrye-openapi:
     path: /openapi
+    auto-add-security: false
     info-title: OpenEPCIS Snippet Service API
     info-version: 1.0.0
     info-description: API for managing atomic snippets in form of JSON schema
     info-contact-name: OpenEPCIS community
     info-contact-email: info@openepcis.io
     info-contact-url: https://github.com/openepcis/snippet-service
-  # OpenSearch configuration
   opensearch:
     hosts: ${QUARKUS_OPENSEARCH_HOSTS:localhost:9200}
     protocol: ${QUARKUS_OPENSEARCH_PROTOCOL:http}
+  oidc:
+    auth-server-url: ${QUARKUS_OIDC_AUTH_SERVER_URL:https://keycloak.dev.epcis.cloud/realms/openepcis}
+    client-id: ${QUARKUS_OIDC_CLIENT_ID:backend-service}
+    application-type: service
+    token:
+      issuer: any
+    tls:
+      verification: required

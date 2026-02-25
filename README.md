@@ -10,6 +10,7 @@ A REST service built with Quarkus that provides APIs for storing and retrieving 
 - [Running the Application](#running-the-application)
 - [Verifying the Setup](#verifying-the-setup)
 - [API Documentation](#api-documentation)
+- [Authentication](#authentication)
 - [Configuration](#configuration)
 - [Packaging and Deployment](#packaging-and-deployment)
 - [Troubleshooting](#troubleshooting)
@@ -28,11 +29,7 @@ Before running this application, ensure you have the following installed:
 
 ```bash
 # 1. Start OpenSearch (without security for local development)
-docker run -d --name opensearch \
-  -p 9200:9200 -p 9600:9600 \
-  -e "discovery.type=single-node" \
-  -e "DISABLE_SECURITY_PLUGIN=true" \
-  opensearchproject/opensearch:latest
+docker run -d --name opensearch-snippet -p 9200:9200 -p 9600:9600 -e "discovery.type=single-node" -e "DISABLE_SECURITY_PLUGIN=true" opensearchproject/opensearch:latest
 
 # 2. Verify OpenSearch is running
 curl http://localhost:9200
@@ -170,11 +167,11 @@ You should see the snippet you just created in the response.
 
 ### Endpoints Overview
 
-| Method | Path | Description |
-|--------|------|-------------|
-| POST | `/snippet` | Create a new snippet |
-| GET | `/snippet` | Search snippets |
-| DELETE | `/snippet/{id}` | Delete a snippet by ID |
+| Method | Path | Auth | Description |
+|--------|------|------|-------------|
+| POST | `/snippet` | Bearer token | Create a new snippet |
+| GET | `/snippet` | Public | Search snippets |
+| DELETE | `/snippet/{id}` | Bearer token | Delete a snippet by ID |
 
 ### POST /snippet - Create Snippet
 
@@ -243,6 +240,53 @@ curl -X DELETE "http://localhost:8080/snippet/https://example.com/test-snippet"
 
 **Response:** `204 No Content`
 
+## Authentication
+
+Write operations (`POST`, `DELETE`) require a valid JWT Bearer token from Keycloak. Read operations (`GET`) are public.
+
+The service validates tokens against a Keycloak realm using the OIDC extension (`quarkus-oidc`) in **service** (resource server) mode — it only validates incoming Bearer tokens and never redirects to a login page.
+
+| Endpoint | Access |
+|----------|--------|
+| `GET /snippet` | Public |
+| `POST /snippet` | Authenticated (Bearer token) |
+| `DELETE /snippet/{id}` | Authenticated (Bearer token) |
+| `/q/*` (health) | Public |
+| `/swagger-ui`, `/openapi` | Public |
+
+### Obtaining a Token
+
+```bash
+TOKEN=$(curl -s -X POST \
+   "https://keycloak.dev.epcis.cloud/realms/openepcis/protocol/openid-connect/token" \
+   -H "Content-Type: application/x-www-form-urlencoded" \
+   -d "grant_type=client_credentials" \
+   -d "client_id={client_id}" \
+   -d "client_secret={client_secret}" \
+   -d "username={username}" \
+   -d "password={password}" \
+   -d "scope=openid" | jq -r '.access_token')
+echo "$TOKEN"
+```
+
+### Using the Token
+
+```bash
+curl -X POST http://localhost:8080/snippet \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer $TOKEN" \
+  -d '{ ... }'
+```
+
+Swagger UI also provides an **Authorize** button to enter a Bearer token for testing protected endpoints.
+
+### OIDC Environment Variables
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `QUARKUS_OIDC_AUTH_SERVER_URL` | `https://keycloak.dev.epcis.cloud/realms/openepcis` | Keycloak realm URL |
+| `QUARKUS_OIDC_CLIENT_ID` | `backend-service` | OIDC client ID |
+
 ## Configuration
 
 ### Application Configuration
@@ -252,18 +296,25 @@ Configuration is in `src/main/resources/application.yaml`:
 ```yaml
 quarkus:
   http:
-    port: 8080
+    port: ${QUARKUS_HTTP_PORT:8080}
   opensearch:
-    hosts: ${OPENSEARCH_HOST:localhost:9200}
-    protocol: ${OPENSEARCH_PROTOCOL:http}
+    hosts: ${QUARKUS_OPENSEARCH_HOSTS:localhost:9200}
+    protocol: ${QUARKUS_OPENSEARCH_PROTOCOL:http}
+  oidc:
+    auth-server-url: ${QUARKUS_OIDC_AUTH_SERVER_URL:https://keycloak.dev.epcis.cloud/realms/openepcis}
+    client-id: ${QUARKUS_OIDC_CLIENT_ID:backend-service}
+    application-type: service
 ```
 
 ### Environment Variables
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `OPENSEARCH_HOST` | `localhost:9200` | OpenSearch host and port |
-| `OPENSEARCH_PROTOCOL` | `http` | Protocol (http or https) |
+| `QUARKUS_OPENSEARCH_HOSTS` | `localhost:9200` | OpenSearch host and port |
+| `QUARKUS_OPENSEARCH_PROTOCOL` | `http` | Protocol (http or https) |
+| `QUARKUS_OIDC_AUTH_SERVER_URL` | `https://keycloak.dev.epcis.cloud/realms/openepcis` | Keycloak realm URL |
+| `QUARKUS_OIDC_CLIENT_ID` | `backend-service` | OIDC client ID |
+| `QUARKUS_HTTP_PORT` | `8080` | HTTP listen port |
 
 **Example: Using Custom OpenSearch Host**
 ```bash
